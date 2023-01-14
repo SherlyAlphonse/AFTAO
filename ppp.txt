@@ -7,7 +7,7 @@ Rivera AR, Rojas J, Chae O (2012) Local gaussian directional pattern for face re
 Rivera AR, Castillo JR, Chae O (2015) Local directional texture pattern image descriptor. Pattern Recogn Lett 51:94---100   
 
 
-function [featureVector] = ldtpsubtraction(img)
+function [featureVector] = pppsubtraction(img)
 
 I=img;
 THR = 5;
