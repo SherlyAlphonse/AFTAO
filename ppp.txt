@@ -1,0 +1,137 @@
+Feature extraction
+
+Jabid T, Kabir MH, Chae O (2010) Robust facial expression recognition based on local directional pattern. ETRI J 32(5):784---794
+Ramirez Rivera A, Rojas Castillo J, Chae O (2013) Local directional number pattern for face analysis: Face and expression recognition. IEEE Trans Image Process 22(5):1740---1752   
+Rivera AR, Castillo JA, Chae O (2012) Recognition of face expressions using local principal texture pattern. In 19th IEEE International Conference on Image Processing, pp 2609---2612 
+Rivera AR, Rojas J, Chae O (2012) Local gaussian directional pattern for face recognition. In Pattern Recognition (ICPR), 21st International Conference, pp 1000---1003 
+Rivera AR, Castillo JR, Chae O (2015) Local directional texture pattern image descriptor. Pattern Recogn Lett 51:94---100   
+
+
+function [featureVector] = ldtpsubtraction(img)
+
+I=img;
+THR = 5;
+% size of the neighborhood
+neighSize = 3;
+% type of mask to use
+mask = 'kirsch';
+BlockSize = [32,32];
+CellSize=[8,8]
+% init filter
+filter = [];
+
+
+
+% compute absolute or not
+ comp_abs = true; 
+
+ I=imresize(I,[162,132]);
+% Convert to gray scale
+if (size(I,3) ~= 1), I = rgb2gray(I); end;
+I = double(I);
+
+
+
+
+%% Resolving Mask
+% Masks
+switch lower(mask)
+  case 'prewitt'
+    switch neighSize
+        D(:,:,1) = [1 1 1; 0 0 0; -1 -1 -1];      % East
+        D(:,:,2) = [1 1 0; 1 0 -1; 0 -1 -1];      % North East
+        D(:,:,3) = [1 0 -1; 1 0 -1; 1 0 -1];      % North
+        D(:,:,4) = [0 -1 -1; 1 0 -1; 1 1 0];      % North West
+        D(:,:,5) = [-1 -1 -1; 0 0 0; 1 1 1];      % West
+        D(:,:,6) = [-1 -1 0; -1 0 1; 0 1 1];      % South West
+        D(:,:,7) = [-1 0 1; -1 0 1; -1 0 1];      % South
+        D(:,:,8) = [0 1 1; -1 0 1; -1 -1 0];      % South Eest
+      case 5
+        D(:,:,1) = [2	2	2	2	2;1	1	1	1	1;0	0	0	0	0;-1	-1	-1	-1	-1;-2	-2	-2	-2	-2];       % East
+        D(:,:,2) = [2	1	0	-1	-2;2	1	0	-1	-2;2	1	0	-1	-2;2	1	0	-1	-2;2	1	0	-1	-2];     % North East
+        D(:,:,3) = [-2	-1	0	1	2;-2	-1	0	1	2;-2	-1	0	1	2;-2	-1	0	1	2;-2	-1	0	1	2];    % North
+        D(:,:,4) = [-2	-2	-2	-2	-2;-1	-1	-1	-1	-1;0	0	0	0	0;1	1	1	1	1;2	2	2	2	2];      % North West
+        D(:,:,5) = [-2	-2	-2	-1	0;-2	-1	-1	0	1;-2	-1	0	1	2;-1	0	1	1	2;0	1	2	2	2];    % West
+        D(:,:,6) = [0	1	2	2	2;-1	0	1	1	2;-2	-1	0	1	2;-2	-1	-1	0	1;-2	-2	-2	-1	0];    % South West
+        D(:,:,7) = [0	-1	-2	-2	-2;1	0	-1	-1	-2;2	1	0	-1	-2;2	1	1	0	-1;2	2	2	1	0];    % South
+        D(:,:,8) = [2	2	2	1	0;2	1	1	0	-1;2	1	0	-1	-2;1	0	-1	-1	-2;0	-1	-2	-2	-2];     % South Eest
+      case 7
+        D(:,:,1) = [3	3	3	3	3	3	3;2	2	2	2	2	2	2;1	1	1	1	1	1	1;0	0	0	0	0	0	0;-1	-1	-1	-1	-1	-1	-1;-2	-2	-2	-2	-2	-2	-2;-3	-3	-3	-3	-3	-3	-3];      % East
+        D(:,:,2) = [3	2	1	0	-1	-2	-3;3	2	1	0	-1	-2	-3;3	2	1	0	-1	-2	-3;3	2	1	0	-1	-2	-3;3	2	1	0	-1	-2	-3;3	2	1	0	-1	-2	-3;3	2	1	0	-1	-2	-3];  % North East
+        D(:,:,3) = [-3	-2	-1	0	1	2	3;-3	-2	-1	0	1	2	3;-3	-2	-1	0	1	2	3;-3	-2	-1	0	1	2	3;-3	-2	-1	0	1	2	3;-3	-2	-1	0	1	2	3;-3	-2	-1	0	1	2	3]; % North
+        D(:,:,4) = [-3	-3	-3	-3	-3	-3	-3;-2	-2	-2	-2	-2	-2	-2;-1	-1	-1	-1	-1	-1	-1;0	0	0	0	0	0	0;1	1	1	1	1	1	1;2	2	2	2	2	2	2;3	3	3	3	3	3	3];     % North West
+        D(:,:,5) = [-3	-3	-3	-3	-2	-1	0;-3	-2	-2	-2	-1	0	1;-3	-2	-1	-1	0	1	2;-3	-2	-1	0	1	2	3;-2	-1	0	1	1	2	3;-1	0	1	2	2	2	3;0	1	2	3	3	3	3]; % West
+        D(:,:,6) = [0	1	2	3	3	3	3;-1	0	1	2	2	2	3;-2	-1	0	1	1	2	3;-3	-2	-1	0	1	2	3;-3	-2	-1	-1	0	1	2;-3	-2	-2	-2	-1	0	1;-3	-3	-3	-3	-2	-1	0]; % South West
+        D(:,:,7) = [0	-1	-2	-3	-3	-3	-3;1	0	-1	-2	-2	-2	-3;2	1	0	-1	-1	-2	-3;3	2	1	0	-1	-2	-3;3	2	1	1	0	-1	-2;3	2	2	2	1	0	-1;3	3	3	3	2	1	0]; % South
+        D(:,:,8) = [3	3	3	3	2	1	0;3	2	2	2	1	0	-1;3	2	1	1	0	-1	-2;3	2	1	0	-1	-2	-3;2	1	0	-1	-1	-2	-3;1	0	-1	-2	-2	-2	-3;0	-1	-2	-3	-3	-3	-3];  % South Eest
+      case 9
+        D(:,:,1) = [4	4	4	4	4	4	4	4	4;3	3	3	3	3	3	3	3	3;2	2	2	2	2	2	2	2	2;1	1	1	1	1	1	1	1	1;0	0	0	0	0	0	0	0	0;-1	-1	-1	-1	-1	-1	-1	-1	-1;-2	-2	-2	-2	-2	-2	-2	-2	-2;-3	-3	-3	-3	-3	-3	-3	-3	-3;-4	-4	-4	-4	-4	-4	-4	-4	-4];         % East
+        D(:,:,2) = [4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4];   % North East
+        D(:,:,3) = [-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4];  % North
+        D(:,:,4) = [-4	-4	-4	-4	-4	-4	-4	-4	-4;-3	-3	-3	-3	-3	-3	-3	-3	-3;-2	-2	-2	-2	-2	-2	-2	-2	-2;-1	-1	-1	-1	-1	-1	-1	-1	-1;0	0	0	0	0	0	0	0	0;1	1	1	1	1	1	1	1	1;2	2	2	2	2	2	2	2	2;3	3	3	3	3	3	3	3	3;4	4	4	4	4	4	4	4	4];        % North West
+        D(:,:,5) = [-4	-4	-4	-4	-4	-3	-2	-1	0;-4	-3	-3	-3	-3	-2	-1	0	1;-4	-3	-2	-2	-2	-1	0	1	2;-4	-3	-2	-1	-1	0	1	2	3;-4	-3	-2	-1	0	1	2	3	4;-3	-2	-1	0	1	1	2	3	4;-2	-1	0	1	2	2	2	3	4;-1	0	1	2	3	3	3	3	4;0	1	2	3	4	4	4	4	4];  % West
+        D(:,:,6) = [0	1	2	3	4	4	4	4	4;-1	0	1	2	3	3	3	3	4;-2	-1	0	1	2	2	2	3	4;-3	-2	-1	0	1	1	2	3	4;-4	-3	-2	-1	0	1	2	3	4;-4	-3	-2	-1	-1	0	1	2	3;-4	-3	-2	-2	-2	-1	0	1	2;-4	-3	-3	-3	-3	-2	-1	0	1;-4	-4	-4	-4	-4	-3	-2	-1	0;]; % South West
+        D(:,:,7) = [0	-1	-2	-3	-4	-4	-4	-4	-4;1	0	-1	-2	-3	-3	-3	-3	-4;2	1	0	-1	-2	-2	-2	-3	-4;3	2	1	0	-1	-1	-2	-3	-4;4	3	2	1	0	-1	-2	-3	-4;4	3	2	1	1	0	-1	-2	-3;4	3	2	2	2	1	0	-1	-2;4	3	3	3	3	2	1	0	-1;4	4	4	4	4	3	2	1	0];  % South
+        D(:,:,8) = [4	4	4	4	4	3	2	1	0;4	3	3	3	3	2	1	0	-1;4	3	2	2	2	1	0	-1	-2;4	3	2	1	1	0	-1	-2	-3;4	3	2	1	0	-1	-2	-3	-4;3	2	1	0	-1	-1	-2	-3	-4;2	1	0	-1	-2	-2	-2	-3	-4;1	0	-1	-2	-3	-3	-3	-3	-4;0	-1	-2	-3	-4	-4	-4	-4	-4];   % South Eest
+
+%% Code computation
+% compute response
+[r c] = size(I);
+imshow(I,[]);
+pause;
+R = zeros(r,c,8);
+for i=1:8
+  R(:,:,i) = imfilter(I,D(:,:,i));
+end
+
+ [B, idx]=sort(R,3,'descend');
+ top = idx(:,:,[1 end])-1;
+ C = B(:,:,1);
+ imshow(C,[]);
+ pause;
+ GaussKernel = [7];
+
+GaussFilt1 = fspecial('Gaussian', GaussKernel(1), 12);
+GaussFilt2 = fspecial('Gaussian', GaussKernel(1), 4);
+dogImg = GaussFilt1 -GaussFilt2;
+disp(dogImg);
+C = conv2(C,dogImg,'same');
+C = C(2:end-1,2:end-1);
+imshow(C,[]);
+ pause;
+BlockSize(1)=20;
+BlockSize(2)=20;
+Image=C;
+pppFeature=[];
+disp(size(Image,1));
+disp(size(Image,2));
+
+BlockNum(1) = size(Image,1)/BlockSize(1);
+BlockNum(2) =size(Image,2)/BlockSize(2); %  m1,m2,m3,m4=0; pppFeature = [];
+pppTemp=[]; 
+for m=1:BlockNum(1)
+    for n=1:BlockNum(2)
+        subGray =Image((m-1)*BlockSize(1)+1:m*BlockSize(1),(n-1)*BlockSize(2)+1:n*BlockSize(2));
+ 
+
+        m1=(m-1)*BlockSize(1)+1; m2=m*BlockSize(1);
+        m3=(n-1)*BlockSize(2)+1; m4=n*BlockSize(2); 
+        disp(m1); disp(m2);
+        disp(m3); disp(m4); disp('__________________________');
+
+     pppdesc=hist(subGray(:),10);
+hist(subGray(:),10);
+disp(pppdesc);
+pppdesc=pppdesc/sum(pppdesc);
+disp(pppdesc);
+pppFeature=horzcat(pppFeature,pppdesc);
+end
+end
+
+disp(pppFeature);
+ 
+n=length(pppFeature); disp(n);
+ 
+featureVector=pppFeature;
+
+end
